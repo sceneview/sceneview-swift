@@ -134,7 +134,8 @@ private struct SceneViewRepresentation: View {
     @State private var lastDragTranslation: CGSize = .zero
     @State private var initialPinchRadius: Float? = nil
     @State private var isDragging = false
-
+    @State private var loadedSkyboxResource: EnvironmentResource? = nil
+    
     var body: some View {
         realityViewContent
             .gesture(dragGesture)
@@ -156,7 +157,7 @@ private struct SceneViewRepresentation: View {
                     }
                 }
             }
-            .task(id: sceneEnvironment?.name) {
+            .task(id: "\(sceneEnvironment?.name ?? "")|\(sceneEnvironment?.showSkybox == true)") {
                 // Load and apply IBL environment when it changes
                 guard let env = sceneEnvironment else { return }
                 await loadEnvironment(env)
@@ -168,8 +169,13 @@ private struct SceneViewRepresentation: View {
         #if os(iOS) || os(visionOS) || os(macOS)
         RealityView { realityContent in
             setupScene(&realityContent)
-        } update: { _ in
+        } update: { content in
             applyCamera()
+            if let loadedSkyboxResource {
+                content.environment = .skybox(loadedSkyboxResource)
+            } else {
+                content.environment = .default
+            }
         }
         #else
         // RealityView requires macOS 15.0+; fall back to a placeholder on older SDKs
@@ -255,6 +261,8 @@ private struct SceneViewRepresentation: View {
             entities.root.components.set(
                 ImageBasedLightReceiverComponent(imageBasedLight: entities.ibl)
             )
+            // Store the skybox, so it can be added as the background in the update closure
+            loadedSkyboxResource = env.showSkybox ? resource : nil
             #endif
         } catch {
             // Environment loading failed — scene continues with default lighting
