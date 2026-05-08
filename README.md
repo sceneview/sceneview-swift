@@ -117,6 +117,19 @@ let title = TextNode(text: "SceneView", fontSize: 0.08, depth: 0.02)
     .centered()
 ```
 
+### Custom Skybox
+
+To add a custom HDR background image as a skybox to your scene, you should first create a folder inside your project with the `.skybox` suffix (see: [EnvironmentResource](https://developer.apple.com/documentation/RealityKit/EnvironmentResource)).
+Inside that folder, you should add a single image file, in `.exr` or `.hdr` format.
+In the example below, `MySkybox.skybox` is the name of that folder, and the image file is inside (the name of the image file itself doesn't matter, the loader uses the folder name without extension).
+
+```swift
+SceneView { root in 
+    // ... add your content
+}
+.environment(.custom(.custom(name: "MySkybox", hdrFile: "MySkybox", intensity: 1.0, showSkybox: true))
+```
+
 ## API Reference
 
 ### Views
