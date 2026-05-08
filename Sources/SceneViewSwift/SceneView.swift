@@ -116,6 +116,9 @@ public struct SceneView: View {
 private final class SceneEntities: ObservableObject {
     let root = Entity()
     let ibl = Entity()
+    #if !os(visionOS)
+    var perspCamera: PerspectiveCamera?
+    #endif
 }
 
 // MARK: - Internal implementation
@@ -197,14 +200,11 @@ private struct SceneViewRepresentation: View {
         // black screen in the simulator.
         realityContent.camera = .virtual
 
-        // Perspective camera: positioned for a nice 3/4 view.
-        // Content is placed at origin (0,0,0) and rotated by applyCamera() to
-        // simulate orbit. The slight Y elevation gives a natural bird's-eye angle.
-        // look(at:from:) handles both position and orientation — in RealityKit,
-        // entities face +Z by default so explicit orientation is required.
+        // Perspective camera: positioned by applyCamera() which moves it around
+        // the origin in spherical coordinates so the skybox wraps naturally.
         let perspCamera = PerspectiveCamera()
         perspCamera.camera.fieldOfViewInDegrees = 60
-        perspCamera.look(at: .zero, from: [0, 0.3, 2], relativeTo: nil)
+        entities.perspCamera = perspCamera
         realityContent.add(perspCamera)
         #endif
 
@@ -273,12 +273,13 @@ private struct SceneViewRepresentation: View {
     // MARK: - Camera
 
     private func applyCamera() {
-        let yaw = simd_quatf(angle: -camera.azimuth, axis: [0, 1, 0])
-        let pitch = simd_quatf(angle: -camera.elevation, axis: [1, 0, 0])
-        entities.root.orientation = yaw * pitch
-
-        let zoomScale = 5.0 / camera.orbitRadius
-        entities.root.scale = SIMD3<Float>(repeating: zoomScale)
+        #if !os(visionOS)
+        // Move the actual camera around the origin so the skybox wraps naturally.
+        // CameraControls.cameraPosition() converts (azimuth, elevation, radius)
+        // to a Cartesian world-space position relative to the orbit target.
+        let pos = camera.cameraPosition()
+        entities.perspCamera?.look(at: camera.target, from: pos, relativeTo: nil)
+        #endif
     }
 
     // MARK: - Gestures
