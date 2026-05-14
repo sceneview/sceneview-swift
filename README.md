@@ -1,184 +1,50 @@
-# SceneViewSwift
+# SceneViewSwift — **archived mirror**
 
-3D and AR scenes in SwiftUI, powered by RealityKit. The Apple companion to [SceneView for Android](https://github.com/sceneview/sceneview).
-
-![iOS 18+](https://img.shields.io/badge/iOS-18%2B-blue)
-![macOS 15+](https://img.shields.io/badge/macOS-15%2B-blue)
-![visionOS 1+](https://img.shields.io/badge/visionOS-1%2B-blue)
-
-## Installation
-
-Add SceneViewSwift via Swift Package Manager:
-
-1. In Xcode, go to **File > Add Package Dependencies...**
-2. Enter the repository URL:
-   ```
-   https://github.com/sceneview/sceneview-swift
-   ```
-3. Select the version rule and add the package to your target.
-
-Or add it to your `Package.swift`:
+> ## ⚠️ This repository is a frozen mirror at `v4.0.0`.
+> ### **For new projects, install from the [main SceneView monorepo](https://github.com/sceneview/sceneview) instead.**
 
 ```swift
-dependencies: [
-    .package(url: "https://github.com/sceneview/sceneview-swift", from: "3.6.0")
-]
+// Package.swift
+.package(url: "https://github.com/sceneview/sceneview.git", from: "4.3.4")
 ```
 
-## Quick Start
-
-### 3D Model Viewer
-
-```swift
-import SwiftUI
-import SceneViewSwift
-
-struct ModelViewer: View {
-    @State private var model: ModelNode?
-
-    var body: some View {
-        SceneView { content in
-            if let model {
-                content.addChild(model.entity)
-            }
-        }
-        .environment(.studio)
-        .cameraControls(.orbit)
-        .autoRotate()
-        .task {
-            model = try? await ModelNode.load("robot.usdz")
-        }
-    }
-}
+```
+// Xcode: File → Add Package Dependencies…
+https://github.com/sceneview/sceneview.git
 ```
 
-### AR Tap-to-Place
+The import is unchanged — `import SceneViewSwift`.
 
-```swift
-import SwiftUI
-import SceneViewSwift
+---
 
-struct ARPlacement: View {
-    @State private var model: ModelNode?
-    @State private var placedEntities: [Entity] = []
+## What happened
 
-    var body: some View {
-        ARSceneView(
-            planeDetection: .horizontal,
-            onTapOnPlane: { position in
-                if let model {
-                    let clone = model.entity.clone(recursive: true)
-                    clone.position = position
-                    // Add to AR scene
-                }
-            }
-        )
-        .task {
-            model = try? await ModelNode.load("chair.usdz")
-        }
-    }
-}
-```
+This `sceneview/sceneview-swift` repository was created on **2026-04-12** as a Swift-Package-Manager mirror of the [`SceneViewSwift/`](https://github.com/sceneview/sceneview/tree/main/SceneViewSwift) subtree of the [main SceneView monorepo](https://github.com/sceneview/sceneview). Its first and only commit shipped the v4.0.0 source. The mirror was never re-synced: the monorepo went on to ship v4.0.1 through **v4.3.4+** while this mirror stayed frozen at v4.0.0.
 
-### Procedural Shapes with PBR
+In [sceneview#920](https://github.com/sceneview/sceneview/pull/920) the monorepo gained a root [`Package.swift`](https://github.com/sceneview/sceneview/blob/main/Package.swift), which made the mirror redundant — any SPM consumer can now point Xcode at the monorepo URL directly. [sceneview#1215](https://github.com/sceneview/sceneview/pull/1215) finished the retirement by migrating every doc / install snippet to the new URL.
 
-```swift
-SceneView { root in
-    let metal = GeometryNode.sphere(
-        radius: 0.3,
-        material: .pbr(color: .gray, metallic: 1.0, roughness: 0.1)
-    )
-    .position(.init(x: 0, y: 0.3, z: 0))
-    .withGroundingShadow()
-    root.addChild(metal.entity)
-}
-.environment(.sunset)
-```
+---
 
-### Lights
+## For existing consumers
 
-```swift
-let sun = LightNode.directional(color: .warm, intensity: 1000, castsShadow: true)
-    .lookAt(.zero)
+If your `Package.resolved` is pinned to this mirror, your build keeps working — the `v4.0.0` tag is preserved and resolvable. But you'll be **4 minor versions behind** and won't receive bug-fixes or new features (the v4.3.4 lineup alone includes the AR Face Mesh exposure fix, ARCore Cloud Anchor recovery, Sketchfab UTF-8 decoding, plus the [#1215](https://github.com/sceneview/sceneview/pull/1215) skybox-renders fix that this mirror's [PR #1](https://github.com/sceneview/sceneview-swift/pull/1) seeded).
 
-let lamp = LightNode.point(color: .custom(r: 1, g: 0.5, b: 0), intensity: 500)
-    .position(.init(x: 1, y: 2, z: 0))
-```
+**To migrate** (Xcode):
 
-### 3D Text & Billboards
+1. Remove the dependency: select `sceneview-swift` in the project navigator → right-click → **Delete**.
+2. Re-add: **File → Add Package Dependencies…** → enter `https://github.com/sceneview/sceneview.git` → choose **Up to Next Major** from `4.3.4`.
+3. Re-add the `SceneViewSwift` library to your app target.
 
-```swift
-// Always faces camera
-let label = BillboardNode.text("Player 1", fontSize: 0.04)
-    .position(.init(x: 0, y: 1.5, z: 0))
+Source imports (`import SceneViewSwift`), public API, and the on-disk SDK code are identical between this mirror and the monorepo — only the SPM resolution URL changes.
 
-// 3D extruded text
-let title = TextNode(text: "SceneView", fontSize: 0.08, depth: 0.02)
-    .centered()
-```
+---
 
-## API Reference
+## Contributors
 
-### Views
+If you'd like to contribute to SceneViewSwift, please open issues and pull requests on the monorepo: **<https://github.com/sceneview/sceneview>**.
 
-| Type | Description |
-|---|---|
-| `SceneView` | 3D scene with orbit camera, lighting, and gestures |
-| `ARSceneView` | AR scene with plane detection and tap-to-place |
+Special thanks to **[@radcli14](https://github.com/radcli14)** (Eliott Radcliffe), who landed the first external PR on this mirror — [PR #1: Environment Skybox and Camera Orbit](https://github.com/sceneview/sceneview-swift/pull/1) — which was ported to the monorepo as [sceneview#1215](https://github.com/sceneview/sceneview/pull/1215) with co-authorship credit.
 
-### Nodes
+---
 
-| Type | Description |
-|---|---|
-| `ModelNode` | USDZ model loading with animations and collision |
-| `GeometryNode` | Procedural shapes (cube, sphere, cylinder, cone, plane) |
-| `MeshNode` | Custom mesh geometry from raw vertex data |
-| `ShapeNode` | 2D polygon shapes (flat or extruded) with ear-clipping triangulation |
-| `TextNode` | 3D extruded text with centering |
-| `BillboardNode` | Always-faces-camera wrapper |
-| `LineNode` | Line segments and axis gizmos |
-| `PathNode` | Closed and open 3D paths with customizable geometry (circle, grid helpers) |
-| `LightNode` | Directional, point, and spot lights |
-| `CameraNode` | Programmatic camera control with orbit, fly-through, and custom modes |
-| `ImageNode` | Display images on 3D planes with automatic aspect ratio |
-| `VideoNode` | Play video content on 3D surfaces with playback controls |
-| `PhysicsNode` | Apply physics simulation (dynamic, static, kinematic) to entities |
-| `DynamicSkyNode` | Time-of-day sun positioning with atmospheric color model |
-| `FogNode` | Atmospheric fog (linear, exponential, height-based) |
-| `ReflectionProbeNode` | Local cubemap reflections for realistic surfaces |
-| `AnchorNode` | AR world/plane anchor |
-| `AugmentedImageNode` | Detect real-world images and place 3D content (iOS only) |
-
-### Configuration
-
-| Type | Description |
-|---|---|
-| `SceneEnvironment` | 6 HDR presets: studio, outdoor, sunset, night, warm, autumn |
-| `CameraControls` | Orbit camera with inertia and auto-rotation |
-| `GeometryMaterial` | PBR material: `.simple`, `.pbr`, `.unlit` |
-
-## Platform Mapping (Android ↔ iOS)
-
-| Android (Compose) | iOS (SwiftUI) |
-|---|---|
-| `SceneView { }` | `SceneView { root in }` |
-| `ARSceneView { }` | `ARSceneView()` |
-| `rememberModelInstance` | `ModelNode.load()` |
-| `CubeNode` | `GeometryNode.cube()` |
-| `SphereNode` | `GeometryNode.sphere()` |
-| `ShapeNode` | `ShapeNode(points:)` |
-| `LightNode(apply = { })` | `LightNode.directional()` |
-| `rememberEnvironment` | `.environment(.studio)` |
-| `CameraManipulator` | `CameraControls` |
-
-## Example App
-
-See [`Examples/SceneViewDemo/`](Examples/SceneViewDemo/) for a full 4-tab demo:
-- **Explore** -- 3D viewer with orbit camera and 6 HDR environments
-- **Shapes** -- All primitive shapes with live previews and code snippets
-- **AR** -- Tap-to-place objects on real surfaces
-- **About** -- SDK information and feature list
-
-## License
-
-Apache 2.0. See [LICENSE](LICENSE) for details.
+This repository is archived (read-only). The `v4.0.0` tag stays resolvable indefinitely for backwards compatibility; no further releases will be cut here.
